@@ -1,3 +1,4 @@
 package com.example.agent.domain;
 
-public record User(Long id, String name) {}
+public record User(String id, String name, String email) {
+}

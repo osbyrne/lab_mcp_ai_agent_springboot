@@ -2,33 +2,32 @@ package com.example.agent.web;
 
 import com.example.agent.domain.User;
 import com.example.agent.service.UserService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/users")
 public class UserController {
 
-    private final UserService userService;
+    private final UserService users;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
+    public UserController(UserService users) {
+        this.users = users;
     }
 
-    @GetMapping
-    public List<User> listUsers() {
-        return userService.findAll();
+    @PostMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public User create(@RequestParam String name, @RequestParam String email) {
+        return users.create(name, email);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUser(@PathVariable Long id) {
-        return userService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public User getById(@PathVariable String id) {
+        try {
+            return users.getById(id);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
     }
 }
