@@ -3,35 +3,34 @@ package com.example.agent.service;
 import com.example.agent.domain.User;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserServiceTest {
 
     private final UserService userService = new UserService();
 
     @Test
-    void findAll_returnsAllUsers() {
-        List<User> users = userService.findAll();
+    void create_returnsUserWithGeneratedId() {
+        User user = userService.create("Alice", "alice@example.com");
 
-        assertThat(users).hasSize(2);
-        assertThat(users).extracting(User::name).containsExactly("Alice", "Bob");
+        assertThat(user.id()).isNotBlank();
+        assertThat(user.name()).isEqualTo("Alice");
+        assertThat(user.email()).isEqualTo("alice@example.com");
     }
 
     @Test
-    void findById_withExistingId_returnsUser() {
-        Optional<User> user = userService.findById(1L);
+    void getById_withExistingId_returnsUser() {
+        User created = userService.create("Bob", "bob@example.com");
 
-        assertThat(user).isPresent();
-        assertThat(user.get().name()).isEqualTo("Alice");
+        User fetched = userService.getById(created.id());
+
+        assertThat(fetched).isEqualTo(created);
     }
 
     @Test
-    void findById_withUnknownId_returnsEmpty() {
-        Optional<User> user = userService.findById(99L);
-
-        assertThat(user).isEmpty();
+    void getById_withUnknownId_throws() {
+        assertThatThrownBy(() -> userService.getById("no-such-id"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

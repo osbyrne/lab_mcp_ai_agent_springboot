@@ -8,11 +8,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-import java.util.Optional;
-
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,31 +24,36 @@ class UserControllerTest {
     private UserService userService;
 
     @Test
-    void listUsers_returnsJsonArray() throws Exception {
-        when(userService.findAll()).thenReturn(List.of(new User(1L, "Alice"), new User(2L, "Bob")));
+    void createUser_returnsUser() throws Exception {
+        when(userService.create("Alice", "alice@example.com"))
+                .thenReturn(new User("uuid-1", "Alice", "alice@example.com"));
 
-        mockMvc.perform(get("/users"))
+        mockMvc.perform(post("/api/users")
+                        .param("name", "Alice")
+                        .param("email", "alice@example.com"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].name").value("Alice"))
-                .andExpect(jsonPath("$[1].name").value("Bob"));
+                .andExpect(jsonPath("$.id").value("uuid-1"))
+                .andExpect(jsonPath("$.name").value("Alice"))
+                .andExpect(jsonPath("$.email").value("alice@example.com"));
     }
 
     @Test
     void getUser_withExistingId_returnsUser() throws Exception {
-        when(userService.findById(1L)).thenReturn(Optional.of(new User(1L, "Alice")));
+        when(userService.getById("uuid-1"))
+                .thenReturn(new User("uuid-1", "Alice", "alice@example.com"));
 
-        mockMvc.perform(get("/users/1"))
+        mockMvc.perform(get("/api/users/uuid-1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value("uuid-1"))
                 .andExpect(jsonPath("$.name").value("Alice"));
     }
 
     @Test
     void getUser_withUnknownId_returns404() throws Exception {
-        when(userService.findById(99L)).thenReturn(Optional.empty());
+        when(userService.getById("no-such-id"))
+                .thenThrow(new IllegalArgumentException("User not found: no-such-id"));
 
-        mockMvc.perform(get("/users/99"))
+        mockMvc.perform(get("/api/users/no-such-id"))
                 .andExpect(status().isNotFound());
     }
 }
